@@ -4,6 +4,12 @@
 # key if there isn't one, serve on http://127.0.0.1:8080. No cluster, no
 # network, no Rust toolchain, nothing to configure.
 
+# Default to pure-Go SQLite with built-in SQLCipher encryption (CGO_ENABLED=0).
+# A default cgo build links against plain SQLite without libsqlcipher unless
+# -tags libsqlite3 is explicitly linked, causing cek.Capable() to refuse startup.
+CGO_ENABLED ?= 0
+export CGO_ENABLED
+
 BIN     := cloud
 DEVDIR  := .dev
 KEYFILE := $(DEVDIR)/master.key

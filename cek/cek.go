@@ -135,11 +135,10 @@ func SetMasterKey(k []byte) {
 //	               on an encryption-capable build. The last is the production
 //	               fail-closed: a capable binary never silently ships plaintext.
 //
-// EVERY BUILD IS CAPABLE TODAY, and the error text must not say otherwise.
-// hanzoai/sqlite reports EncryptionAvailable() == true under BOTH build tags: the
-// cgo backend links libsqlcipher, and the pure-Go backend encrypts through the
-// hanzoai/sqlcipher codec VFS. There is no longer a plaintext-only backend, so
-// the no-key branch below is the one every build takes.
+// Pure-Go builds (CGO_ENABLED=0) encrypt out of the box through the built-in
+// hanzoai/sqlcipher codec VFS. A default cgo build links against plain SQLite
+// without libsqlcipher unless -tags libsqlite3 is explicitly provided, which
+// causes cek.Capable() to refuse startup.
 //
 // This used to be untrue, and the refusal still carried the advice from back
 // then: "or run a pure-Go dev build". That route is gone. Following it landed you
@@ -270,9 +269,9 @@ func Capable() error {
 	}
 	if classify(path) != stateEncrypted {
 		return fmt.Errorf("cek: this build cannot encrypt a store — a keyed database " +
-			"was written with a plaintext header. Build with CGO_ENABLED=1 -tags libsqlite3 " +
-			"linked against libsqlcipher, or set " + DevUnencryptedEnv + "=1 to run unencrypted " +
-			"on purpose")
+			"was written with a plaintext header. Build with CGO_ENABLED=0 (pure-Go SQLCipher), " +
+			"or build with CGO_ENABLED=1 -tags libsqlite3 linked against libsqlcipher, " +
+			"or set " + DevUnencryptedEnv + "=1 to run unencrypted on purpose")
 	}
 	return nil
 }
