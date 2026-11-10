@@ -200,13 +200,20 @@ s3 subsystem mounted fail-closed: S3_ACCESS_KEY/S3_SECRET_KEY not set (all ops 5
 make build          # go build, no Rust needed; defaults to CGO_ENABLED=0 for encryption
 make test           # go test ./...
 make native         # optional: cargo build the Rust flag evaluator
-make build TAGS=flags_native
+CGO_ENABLED=1 make build TAGS=flags_native  # it links over cgo; see below
 make hooks          # install the pre-push guard — do this once
 ```
 
 `make hooks` points git at `.githooks`, which refuses any push to `origin`
 carrying history from another remote or an import of a non-public module. It
 runs git, grep and awk only.
+
+The flag evaluator is Rust linked over cgo, so `TAGS=flags_native` needs
+`CGO_ENABLED=1`, and the Makefile stops rather than quietly building without
+it. A cgo build links ordinary SQLite and cannot encrypt, so that binary starts
+only with `CLOUD_DEV_UNENCRYPTED=1`. To keep encryption, link libsqlcipher as
+well: `CGO_ENABLED=1 make build TAGS=flags_native,libsqlite3`, with
+`CGO_CFLAGS` and `CGO_LDFLAGS` pointing at it.
 
 Benchmarks for this server live in
 [hanzoai/benchmarks](https://github.com/hanzoai/benchmarks).
